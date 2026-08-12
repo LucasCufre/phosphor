@@ -1,0 +1,2000 @@
+<title>Phosphor</title>
+<style>
+  :root {
+    --bg: #101318;
+    --panel: #171c23;
+    --panel-2: #1d232c;
+    --border: #2a323e;
+    --text: #d8dfe8;
+    --muted: #8b96a3;
+    --accent: #e0a458;
+    --accent-dim: #9c7440;
+    --good: #7fbf7f;
+    --bad: #d97b7b;
+    --radius: 6px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0 0 4rem;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem 1.5rem;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  header h1 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--accent);
+  }
+  header h1::before { content: "▮ "; color: var(--accent-dim); }
+  header .sub { color: var(--muted); font-size: 0.8rem; }
+  .header-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-left: auto;
+    align-items: center;
+  }
+  label.inline {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  select, input[type="text"], input[type="number"] {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.35rem 0.5rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+  }
+  select:focus, input:focus, button:focus-visible {
+    outline: 2px solid var(--accent-dim);
+    outline-offset: 1px;
+  }
+  input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  [hidden] { display: none !important; }
+  main {
+    display: grid;
+    grid-template-columns: minmax(360px, 460px) 1fr;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  /* ── Controls panel ── */
+  .controls { display: flex; flex-direction: column; gap: 1rem; }
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 0.8rem 0.9rem 0.9rem;
+    margin: 0;
+  }
+  .panel-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    padding: 0 0 0.6rem;
+    border-bottom: 1px solid var(--border);
+    margin: 0 0 0.6rem;
+  }
+  [data-hint] { position: relative; cursor: help; }
+  [data-hint]::after {
+    content: attr(data-hint);
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-end: calc(100% + 6px);
+    z-index: 30;
+    inline-size: max-content;
+    max-inline-size: 230px;
+    background: #0b0e12;
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    line-height: 1.45;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: normal;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  [data-hint]:hover::after, [data-hint]:focus-within::after { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { [data-hint]::after { transition: none; } }
+  .color-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.18rem 0;
+  }
+  .color-row span.lbl { color: var(--muted); font-size: 0.78rem; }
+  .color-row .swatchBtn {
+    inline-size: 34px;
+    block-size: 26px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .color-row .swatchBtn:hover { border-color: var(--accent-dim); }
+  /* ── color picker (estilo Figma) ── */
+  #cpicker {
+    position: fixed;
+    z-index: 60;
+    inline-size: 252px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem;
+    box-shadow: 0 16px 48px rgba(0,0,0,.55);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  #cpicker[hidden] { display: none; }
+  .cp-sv {
+    position: relative;
+    block-size: 150px;
+    border-radius: 6px;
+    cursor: crosshair;
+    touch-action: none;
+    background:
+      linear-gradient(to top, #000, rgba(0,0,0,0)),
+      linear-gradient(to right, #fff, var(--cp-hue, #f00));
+  }
+  .cp-thumb, .cp-hthumb {
+    position: absolute;
+    inline-size: 14px;
+    block-size: 14px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,.55);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .cp-hue {
+    position: relative;
+    block-size: 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    touch-action: none;
+    background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  }
+  .cp-hthumb { inset-block-start: 50%; background: var(--cp-hue, #f00); }
+  .cp-row { display: flex; gap: 0.3rem; align-items: center; }
+  .cp-row select {
+    padding: 0.25rem 0.3rem;
+    font-size: 0.72rem;
+  }
+  #cpFields { display: flex; gap: 0.25rem; flex: 1; min-inline-size: 0; }
+  #cpFields input {
+    flex: 1;
+    min-inline-size: 0;
+    padding: 0.28rem 0.25rem;
+    font-size: 0.72rem;
+    text-align: center;
+  }
+  #cpFields input.cp-hexin { text-align: start; text-transform: lowercase; }
+  #cpCopy {
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    inline-size: 28px;
+    block-size: 26px;
+    cursor: pointer;
+    font-family: var(--mono);
+  }
+  #cpCopy:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .cp-swlabel {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-block-start: 0.1rem;
+  }
+  .cp-swgrid { display: flex; flex-wrap: wrap; gap: 4px; min-block-size: 18px; }
+  .cp-sw {
+    inline-size: 18px;
+    block-size: 18px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+  }
+  .cp-sw:hover { border-color: var(--accent); }
+  .color-row input.hex {
+    inline-size: 84px;
+    font-size: 0.75rem;
+    text-transform: lowercase;
+  }
+  .font-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem 0.75rem;
+  }
+  .font-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  /* ancla el control al fondo de la celda: las filas quedan alineadas
+     aunque un label ocupe dos líneas */
+  .font-grid label > input:not([type="checkbox"]),
+  .font-grid label > select {
+    margin-top: auto;
+  }
+  .font-grid label.full { grid-column: 1 / -1; }
+  .check {
+    flex-direction: row !important;
+    align-items: center;
+    text-transform: uppercase;
+  }
+  button.mini {
+    align-self: end;
+    background: var(--panel-2);
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.6rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  button.mini:hover { background: var(--accent); color: var(--bg); }
+  /* switch de modo lectura */
+  .switch input[type="checkbox"] {
+    appearance: none;
+    inline-size: 34px;
+    block-size: 18px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    margin: 0;
+  }
+  .switch input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 2px;
+    inset-inline-start: 2px;
+    inline-size: 12px;
+    block-size: 12px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: inset-inline-start 0.15s, background 0.15s;
+  }
+  .switch input[type="checkbox"]:checked {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+  .switch input[type="checkbox"]:checked::after {
+    inset-inline-start: 18px;
+    background: var(--accent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .switch input[type="checkbox"], .switch input[type="checkbox"]::after { transition: none; }
+  }
+  /* parámetros alterados por el modo lectura */
+  label.altered { color: var(--accent) !important; }
+  label.altered input, label.altered select {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 1px var(--accent-dim);
+  }
+  .contrast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.55rem 0.75rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+  .contrast b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .badge {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+  }
+  .badge.ok  { background: rgba(127,191,127,.15); color: var(--good); }
+  .badge.warn{ background: rgba(217,123,123,.15); color: var(--bad); }
+
+  /* ── Right column ── */
+  .stage { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+
+  .terminal {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    position: sticky;
+    top: 1rem;
+    /* fondo degradado: hace visible la opacidad/blur del tema */
+    background: linear-gradient(135deg, #3d2f55, #163049 45%, #4a2b3a);
+  }
+  .term-chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { inline-size: 11px; block-size: 11px; border-radius: 50%; background: var(--border); }
+  .term-body {
+    background: var(--t-bg);
+    color: var(--t-fg);
+    font-family: var(--t-font), monospace;
+    font-size: var(--t-size);
+    line-height: var(--t-lh);
+    letter-spacing: var(--t-ls);
+    font-feature-settings: var(--t-feat);
+    padding: var(--t-pad);
+    overflow-x: auto;
+    white-space: pre;
+    min-height: 380px;
+    inline-size: calc(var(--t-cols) * 1ch + 2 * var(--t-pad));
+    max-inline-size: 100%;
+    backdrop-filter: blur(var(--t-blur, 0px));
+  }
+  .term-body > * { translate: 0 calc(-1 * var(--t-bshift, 0px)); }
+  #preview.thick { -webkit-text-stroke: 0.4px currentColor; }
+  #preview.bab .c0.b{color:var(--a8)} #preview.bab .c1.b{color:var(--a9)}
+  #preview.bab .c2.b{color:var(--a10)} #preview.bab .c3.b{color:var(--a11)}
+  #preview.bab .c4.b{color:var(--a12)} #preview.bab .c5.b{color:var(--a13)}
+  #preview.bab .c6.b{color:var(--a14)} #preview.bab .c7.b{color:var(--a15)}
+  .prose {
+    white-space: pre-wrap;
+    display: block;
+    max-inline-size: 100%;
+  }
+  .term-body ::selection { background: var(--t-selbg); color: var(--t-selfg); }
+  .c0{color:var(--a0)} .c1{color:var(--a1)} .c2{color:var(--a2)} .c3{color:var(--a3)}
+  .c4{color:var(--a4)} .c5{color:var(--a5)} .c6{color:var(--a6)} .c7{color:var(--a7)}
+  .c8{color:var(--a8)} .c9{color:var(--a9)} .c10{color:var(--a10)} .c11{color:var(--a11)}
+  .c12{color:var(--a12)} .c13{color:var(--a13)} .c14{color:var(--a14)} .c15{color:var(--a15)}
+  .b { font-weight: 700; }
+  .sel { background: var(--t-selbg); color: var(--t-selfg); }
+  .sw {
+    display: inline-block;
+    inline-size: 2.1em;
+    text-align: center;
+    border-radius: 3px;
+  }
+  .cursor {
+    display: inline-block;
+    position: relative;
+  }
+  .cursor.block { background: var(--t-cursor); color: var(--t-bg-solid); }
+  .cursor.bar::before, .cursor.underline::after {
+    content: "";
+    position: absolute;
+    background: var(--t-cursor);
+  }
+  .cursor.bar::before { inset-block: 0; inset-inline-start: -1px; inline-size: 2px; }
+  .cursor.underline::after { inset-inline: 0; inset-block-end: 0; block-size: 2px; }
+  .cursor.blink { animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .cursor.blink { animation: none; } }
+
+  /* ── Export modal ── */
+  dialog#exportDialog, dialog#importDialog {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    inline-size: min(880px, 94vw);
+    max-block-size: 86vh;
+  }
+  dialog#exportDialog::backdrop, dialog#importDialog::backdrop {
+    background: rgba(5, 8, 12, 0.68);
+  }
+  .import-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.9rem;
+  }
+  #importText {
+    inline-size: 100%;
+    min-block-size: 240px;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    padding: 0.6rem;
+    resize: vertical;
+  }
+  #importFile { color: var(--muted); font-size: 0.75rem; }
+  .import-actions { display: flex; align-items: center; gap: 0.7rem; }
+  .export { background: var(--panel); position: relative; }
+  #closeExport, .dialog-close {
+    position: absolute;
+    inset-block-start: 0.6rem;
+    inset-inline-end: 0.6rem;
+    z-index: 5;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    inline-size: 28px;
+    block-size: 28px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  #closeExport:hover, .dialog-close:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .export-head { padding-inline-end: 3rem; }
+  .font-status {
+    font-size: 0.68rem;
+    margin-top: 0.2rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .font-status.ok { color: var(--good); }
+  .font-status.warn { color: var(--bad); }
+  .export-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .export-head .title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-inline-end: 0.5rem;
+  }
+  .tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tabs button {
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .export-actions { margin-left: auto; display: flex; gap: 0.45rem; }
+  .export-actions button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.3rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .export-actions button:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .export-note {
+    padding: 0.5rem 0.9rem 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+  pre.code {
+    margin: 0;
+    padding: 0.9rem;
+    overflow-x: auto;
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--text);
+    max-height: 420px;
+    overflow-y: auto;
+  }
+</style>
+
+<header>
+  <h1>Phosphor</h1>
+  <span class="sub">editor de temas de terminal · exportá a tu IDE</span>
+  <div class="header-controls">
+    <label class="inline">preset
+      <select id="preset">
+        <option value="">— elegir base —</option>
+      </select>
+    </label>
+    <label class="inline">nombre
+      <input type="text" id="themeName" value="Mi Tema" size="14">
+    </label>
+    <button type="button" id="openImport" class="mini">⇲ importar</button>
+    <button type="button" id="openExport" class="mini">⇱ exportar</button>
+  </div>
+</header>
+
+<main>
+  <div class="controls">
+    <section class="panel" id="fs-base"><h2 class="panel-title">Base</h2></section>
+    <div class="contrast" id="contrast"></div>
+    <section class="panel" id="fs-ansi"><h2 class="panel-title">ANSI 0–7 · normales</h2></section>
+    <section class="panel" id="fs-bright"><h2 class="panel-title">ANSI 8–15 · bright</h2></section>
+    <section class="panel">
+      <h2 class="panel-title">Carácter</h2>
+      <div class="font-grid">
+        <label class="full" data-hint="Se aplica al preview solo si la fuente está instalada en tu sistema (el navegador no puede descargarla). El export usa el nombre elegido igual.">fuente
+          <select id="fontSelect">
+            <option>JetBrains Mono</option>
+            <option>Fira Code</option>
+            <option>SF Mono</option>
+            <option>Cascadia Code</option>
+            <option>Menlo</option>
+            <option>Monaco</option>
+            <option>Hack</option>
+            <option>IBM Plex Mono</option>
+            <option>Iosevka</option>
+            <option>Source Code Pro</option>
+            <option>Ubuntu Mono</option>
+            <option>MonoLisa</option>
+            <option>Berkeley Mono</option>
+            <option>Comic Mono</option>
+            <option value="__custom">Otra… (escribir nombre)</option>
+          </select>
+          <span class="font-status" id="fontStatus"></span>
+        </label>
+        <label class="full" id="customFontLabel" data-hint="Editable solo con “Otra…” en el selector. Es el nombre que se escribe en el config exportado.">nombre exacto de la fuente
+          <input type="text" id="fontFamily" value="JetBrains Mono" disabled>
+        </label>
+        <label>tamaño (px)
+          <input type="number" id="fontSize" value="13" min="8" max="32">
+        </label>
+        <label data-hint="Espacio extra entre caracteres, en píxeles por celda. Equivale al tracking de InDesign. Valores negativos comprimen.">tracking (px)
+          <input type="number" id="letterSpacing" value="0" min="-2" max="8" step="0.5">
+        </label>
+        <label class="full" data-hint="Alternates OpenType de la fuente, separados por coma: ss01 (variantes estilísticas), zero (cero cortado), cv05… Solo si la fuente los incluye.">features OpenType
+          <input type="text" id="fontFeatures" placeholder="ss01, zero, cv05">
+        </label>
+        <label class="check" data-hint="Fusiona secuencias como => != >= en un solo glifo. Requiere una fuente con ligaduras (Fira Code, JetBrains Mono, Iosevka). Mirá la línea de muestra del preview.">
+          <input type="checkbox" id="ligatures" checked> ligaduras
+        </label>
+        <label class="check" data-hint="Trazos levemente más gruesos, como el render clásico de macOS (font-thicken). El preview lo aproxima con un contorno sutil.">
+          <input type="checkbox" id="fontThicken"> engrosar trazos
+        </label>
+      </div>
+    </section>
+    <section class="panel">
+      <h2 class="panel-title">Párrafo · composición</h2>
+      <div class="font-grid">
+        <label data-hint="Leading proporcional: 1.7 = cada línea mide 170% del tamaño de fuente.">interlineado (ratio)
+          <input type="number" id="lineHeight" value="1.5" min="1" max="2.4" step="0.05">
+        </label>
+        <label data-hint="Suma píxeles fijos a la altura de cada línea, además del ratio. Leading absoluto, estilo InDesign.">interlineado extra (px)
+          <input type="number" id="cellHeightExtra" value="0" min="-4" max="16" step="1">
+        </label>
+        <label data-hint="Sube (+) o baja (−) el texto dentro de su celda. Útil si la fuente se ve descentrada verticalmente.">baseline shift (px)
+          <input type="number" id="baselineShift" value="0" min="-6" max="6" step="1">
+        </label>
+        <label data-hint="Ancho de línea de la ventana, en caracteres. Para texto corrido lo óptimo es 60–90; las terminales suelen abrirse mucho más anchas.">ancho de línea (columnas)
+          <input type="number" id="columns" value="100" min="40" max="220" step="2">
+        </label>
+        <label data-hint="Aire entre el texto y el borde de la ventana de la terminal.">márgenes (px)
+          <input type="number" id="padding" value="14" min="0" max="60">
+        </label>
+        <label class="check switch full" data-hint="Preset editorial: 14px · interlineado 1.7 · tracking +0.5 · 88 columnas · márgenes 24 · contraste mínimo 4.5. Al apagarlo se restauran tus valores previos. Los parámetros alterados quedan marcados en ámbar.">
+          <input type="checkbox" id="readingMode"> modo lectura
+          <span id="rmState" class="font-status"></span>
+        </label>
+      </div>
+    </section>
+    <section class="panel">
+      <h2 class="panel-title">Render & ventana</h2>
+      <div class="font-grid">
+        <label data-hint="Transparencia del fondo de la ventana: 1 = opaco. El preview muestra un degradado detrás para que se note.">opacidad fondo
+          <input type="number" id="opacity" value="1" min="0.5" max="1" step="0.01">
+        </label>
+        <label data-hint="Difumina lo que se ve detrás de la ventana. Solo tiene efecto con opacidad menor a 1.">blur fondo (px)
+          <input type="number" id="blur" value="0" min="0" max="40" step="1">
+        </label>
+        <label data-hint="Seguro de legibilidad: la terminal corrige automáticamente cualquier color que no alcance este ratio de contraste contra el fondo. 4.5 = estándar WCAG AA. El preview lo simula.">contraste mínimo (1–21)
+          <input type="number" id="minimumContrast" value="1" min="1" max="21" step="0.5">
+        </label>
+        <label class="check" data-hint="El texto en negrita usa además la versión bright de su color (convención heredada: negrita = brillo). Mirá PASS/FAIL en el preview.">
+          <input type="checkbox" id="boldAsBright"> bold = bright
+        </label>
+        <label>cursor
+          <select id="cursorStyle">
+            <option value="block">bloque</option>
+            <option value="bar">barra</option>
+            <option value="underline">subrayado</option>
+          </select>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="cursorBlink" checked> parpadeo
+        </label>
+      </div>
+    </section>
+  </div>
+
+  <div class="stage">
+    <div class="terminal">
+      <div class="term-chrome">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span id="chromeTitle">mi-tema — zsh</span>
+      </div>
+      <div class="term-body" id="preview"></div>
+    </div>
+
+    <dialog id="exportDialog">
+    <section class="export">
+      <button id="closeExport" aria-label="cerrar">✕</button>
+      <div class="export-head">
+        <span class="title">Exportar</span>
+        <div class="tabs" role="tablist" id="tabs"></div>
+        <div class="export-actions">
+          <button id="copyBtn">copiar</button>
+          <button id="dlBtn">descargar</button>
+        </div>
+      </div>
+      <p class="export-note" id="exportNote"></p>
+      <pre class="code"><code id="exportCode"></code></pre>
+    </section>
+    </dialog>
+
+    <dialog id="importDialog">
+    <section class="export">
+      <button id="closeImport" class="dialog-close" aria-label="cerrar">✕</button>
+      <div class="export-head">
+        <span class="title">Importar tema</span>
+      </div>
+      <div class="import-body">
+        <p class="export-note" style="padding:0">
+          Pegá un tema existente o cargá el archivo — el formato se detecta solo.
+          Soportados: iTerm2 (.itermcolors y perfil dinámico), Base16 YAML, VS Code
+          (settings.json), Windows Terminal, Alacritty (TOML), kitty, Ghostty,
+          Xresources, WezTerm (lua), y el JSON/YAML de Phosphor.
+        </p>
+        <input type="file" id="importFile"
+          accept=".itermcolors,.json,.yaml,.yml,.toml,.conf,.config,.lua,.txt,.Xresources,text/*">
+        <textarea id="importText" spellcheck="false"
+          placeholder="… pegá acá el contenido del tema …"></textarea>
+        <div class="import-actions">
+          <button type="button" id="importBtn" class="mini">⇲ importar</button>
+          <span id="importResult" class="font-status"></span>
+        </div>
+      </div>
+    </section>
+    </dialog>
+  </div>
+</main>
+
+<script>
+/* ────────────────────────── state ────────────────────────── */
+const ANSI_KEYS = [
+  "black","red","green","yellow","blue","magenta","cyan","white",
+  "brightBlack","brightRed","brightGreen","brightYellow",
+  "brightBlue","brightMagenta","brightCyan","brightWhite"
+];
+const ANSI_LABELS = [
+  "negro","rojo","verde","amarillo","azul","magenta","cian","blanco",
+  "negro br.","rojo br.","verde br.","amarillo br.",
+  "azul br.","magenta br.","cian br.","blanco br."
+];
+const BASE_KEYS = [
+  ["background","fondo"],
+  ["foreground","texto"],
+  ["cursor","cursor"],
+  ["selectionBackground","selección (fondo)"],
+  ["selectionForeground","selección (texto)"]
+];
+
+const PRESETS = {
+  "One Dark": {
+    background:"#282c34", foreground:"#abb2bf", cursor:"#61afef",
+    selectionBackground:"#3e4451", selectionForeground:"#abb2bf",
+    ansi:["#282c34","#e06c75","#98c379","#e5c07b","#61afef","#c678dd","#56b6c2","#abb2bf",
+          "#5c6370","#e06c75","#98c379","#e5c07b","#61afef","#c678dd","#56b6c2","#ffffff"]
+  },
+  "Dracula": {
+    background:"#282a36", foreground:"#f8f8f2", cursor:"#f8f8f2",
+    selectionBackground:"#44475a", selectionForeground:"#f8f8f2",
+    ansi:["#21222c","#ff5555","#50fa7b","#f1fa8c","#bd93f9","#ff79c6","#8be9fd","#f8f8f2",
+          "#6272a4","#ff6e6e","#69ff94","#ffffa5","#d6acff","#ff92df","#a4ffff","#ffffff"]
+  },
+  "Nord": {
+    background:"#2e3440", foreground:"#d8dee9", cursor:"#d8dee9",
+    selectionBackground:"#434c5e", selectionForeground:"#eceff4",
+    ansi:["#3b4252","#bf616a","#a3be8c","#ebcb8b","#81a1c1","#b48ead","#88c0d0","#e5e9f0",
+          "#4c566a","#bf616a","#a3be8c","#ebcb8b","#81a1c1","#b48ead","#8fbcbb","#eceff4"]
+  },
+  "Gruvbox Dark": {
+    background:"#282828", foreground:"#ebdbb2", cursor:"#ebdbb2",
+    selectionBackground:"#504945", selectionForeground:"#ebdbb2",
+    ansi:["#282828","#cc241d","#98971a","#d79921","#458588","#b16286","#689d6a","#a89984",
+          "#928374","#fb4934","#b8bb26","#fabd2f","#83a598","#d3869b","#8ec07c","#ebdbb2"]
+  },
+  "Solarized Dark": {
+    background:"#002b36", foreground:"#839496", cursor:"#839496",
+    selectionBackground:"#073642", selectionForeground:"#93a1a1",
+    ansi:["#073642","#dc322f","#859900","#b58900","#268bd2","#d33682","#2aa198","#eee8d5",
+          "#002b36","#cb4b16","#586e75","#657b83","#839496","#6c71c4","#93a1a1","#fdf6e3"]
+  },
+  "Catppuccin Mocha": {
+    background:"#1e1e2e", foreground:"#cdd6f4", cursor:"#f5e0dc",
+    selectionBackground:"#45475a", selectionForeground:"#cdd6f4",
+    ansi:["#45475a","#f38ba8","#a6e3a1","#f9e2af","#89b4fa","#f5c2e7","#94e2d5","#bac2de",
+          "#585b70","#f38ba8","#a6e3a1","#f9e2af","#89b4fa","#f5c2e7","#94e2d5","#a6adc8"]
+  },
+  "Tokyo Night": {
+    background:"#1a1b26", foreground:"#c0caf5", cursor:"#c0caf5",
+    selectionBackground:"#33467c", selectionForeground:"#c0caf5",
+    ansi:["#15161e","#f7768e","#9ece6a","#e0af68","#7aa2f7","#bb9af7","#7dcfff","#a9b1d6",
+          "#414868","#f7768e","#9ece6a","#e0af68","#7aa2f7","#bb9af7","#7dcfff","#c0caf5"]
+  }
+};
+
+const state = {
+  name: "Mi Tema",
+  background:"#1e1e2e", foreground:"#cdd6f4", cursor:"#f5e0dc",
+  selectionBackground:"#45475a", selectionForeground:"#cdd6f4",
+  ansi: PRESETS["Catppuccin Mocha"].ansi.slice(),
+  fontFamily:"JetBrains Mono", fontSize:13, lineHeight:1.5,
+  letterSpacing:0, padding:14,
+  ligatures:true, fontFeatures:"", fontThicken:false,
+  cellHeightExtra:0, baselineShift:0, columns:100,
+  opacity:1, blur:0, minimumContrast:1, boldAsBright:false,
+  cursorStyle:"block", cursorBlink:true
+};
+
+/* ────────────────────────── helpers ────────────────────────── */
+const $ = s => document.querySelector(s);
+const normHex = v => {
+  v = v.trim().replace(/^#?/, "#").toLowerCase();
+  if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + [...v.slice(1)].map(c => c + c).join("");
+  return /^#[0-9a-f]{6}$/.test(v) ? v : null;
+};
+const stripHash = h => h.replace("#","");
+function relLum(hex) {
+  const c = [1,3,5].map(i => parseInt(hex.slice(i, i+2), 16) / 255)
+    .map(v => v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4));
+  return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2];
+}
+function contrastRatio(a, b) {
+  const [l1, l2] = [relLum(a), relLum(b)].sort((x,y) => y-x);
+  return (l1 + 0.05) / (l2 + 0.05);
+}
+function mixHex(a, b, t) {
+  const p = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+  const [ca, cb] = [p(a), p(b)];
+  return "#" + [0,1,2].map(i =>
+    Math.round(ca[i] + (cb[i] - ca[i]) * t).toString(16).padStart(2, "0")).join("");
+}
+/* simula el "contraste mínimo": empuja el color hacia blanco/negro hasta alcanzar el ratio */
+function ensureContrast(fg, bg, min) {
+  if (min <= 1 || contrastRatio(fg, bg) >= min) return fg;
+  const target = relLum(bg) > 0.5 ? "#000000" : "#ffffff";
+  for (let t = 0.05; t <= 1; t += 0.05) {
+    const c = mixHex(fg, target, t);
+    if (contrastRatio(c, bg) >= min) return c;
+  }
+  return target;
+}
+
+/* ────────────────────────── controls ────────────────────────── */
+function colorRow(label, get, set) {
+  const row = document.createElement("div");
+  row.className = "color-row";
+  const lbl = document.createElement("span");
+  lbl.className = "lbl"; lbl.textContent = label;
+  const sw = document.createElement("button");
+  sw.type = "button"; sw.className = "swatchBtn";
+  sw.setAttribute("aria-label", "elegir color: " + label);
+  const hex = document.createElement("input");
+  hex.type = "text"; hex.className = "hex";
+  hex.setAttribute("aria-label", label + " hex");
+  sw.addEventListener("click", () => openPicker(sw, get, v => { set(v); row._sync(); }));
+  hex.addEventListener("change", () => {
+    const v = normHex(hex.value);
+    if (v) { set(v); row._sync(); render(); }
+    else hex.value = get();
+  });
+  row.append(lbl, sw, hex);
+  row._sync = () => { sw.style.background = get(); hex.value = get(); };
+  row._sync();
+  return row;
+}
+
+const rows = [];
+BASE_KEYS.forEach(([key, label]) => {
+  const r = colorRow(label, () => state[key], v => state[key] = v);
+  rows.push(r); $("#fs-base").appendChild(r);
+});
+ANSI_KEYS.forEach((_, i) => {
+  const r = colorRow(`${i} · ${ANSI_LABELS[i]}`, () => state.ansi[i], v => state.ansi[i] = v);
+  rows.push(r);
+  (i < 8 ? $("#fs-ansi") : $("#fs-bright")).appendChild(r);
+});
+
+const presetSel = $("#preset");
+Object.keys(PRESETS).forEach(name => {
+  const o = document.createElement("option");
+  o.value = o.textContent = name;
+  presetSel.appendChild(o);
+});
+presetSel.value = "Catppuccin Mocha";
+presetSel.addEventListener("change", () => {
+  const p = PRESETS[presetSel.value];
+  if (!p) return;
+  Object.assign(state, {
+    background: p.background, foreground: p.foreground, cursor: p.cursor,
+    selectionBackground: p.selectionBackground, selectionForeground: p.selectionForeground,
+    ansi: p.ansi.slice()
+  });
+  rows.forEach(r => r._sync());
+  render();
+});
+
+$("#themeName").addEventListener("input", e => { state.name = e.target.value || "Mi Tema"; render(); });
+
+const fontSelect = $("#fontSelect");
+const fontFamilyInput = $("#fontFamily");
+fontSelect.addEventListener("change", () => {
+  if (fontSelect.value === "__custom") {
+    fontFamilyInput.disabled = false;
+    fontFamilyInput.focus();
+    fontFamilyInput.select();
+  } else {
+    fontFamilyInput.disabled = true;
+    state.fontFamily = fontSelect.value;
+    fontFamilyInput.value = fontSelect.value;
+    render();
+  }
+});
+
+const CONTROL_IDS = [
+  ["fontFamily","value"],["fontSize","valueAsNumber"],["lineHeight","valueAsNumber"],
+  ["letterSpacing","valueAsNumber"],["padding","valueAsNumber"],
+  ["fontFeatures","value"],["ligatures","checked"],["fontThicken","checked"],
+  ["cellHeightExtra","valueAsNumber"],["baselineShift","valueAsNumber"],
+  ["columns","valueAsNumber"],["opacity","valueAsNumber"],["blur","valueAsNumber"],
+  ["minimumContrast","valueAsNumber"],["boldAsBright","checked"],
+  ["cursorStyle","value"],["cursorBlink","checked"]
+];
+CONTROL_IDS.forEach(([id, prop]) => {
+  $("#" + id).addEventListener("input", e => {
+    const v = e.target[prop];
+    const emptyOk = id === "fontFeatures";
+    if (emptyOk || (v !== "" && !(typeof v === "number" && isNaN(v)))) state[id] = v;
+    render();
+  });
+});
+
+function syncControls() {
+  CONTROL_IDS.forEach(([id, prop]) => { $("#" + id)[prop] = state[id]; });
+}
+
+/* modo lectura: switch con snapshot — al apagarlo se restauran los valores previos */
+const READING = {
+  fontSize: 14, lineHeight: 1.7, letterSpacing: 0.5, cellHeightExtra: 0,
+  columns: 88, padding: 24, minimumContrast: 4.5, ligatures: true
+};
+let rmSnapshot = null;
+function markReading(on) {
+  Object.keys(READING).forEach(k => {
+    const el = $("#" + k);
+    if (el) el.closest("label")?.classList.toggle("altered", on);
+  });
+  $("#rmState").textContent = on ? "● activo — 8 parámetros alterados" : "";
+  $("#rmState").className = "font-status " + (on ? "ok" : "");
+}
+$("#readingMode").addEventListener("change", e => {
+  if (e.target.checked) {
+    rmSnapshot = {};
+    Object.keys(READING).forEach(k => rmSnapshot[k] = state[k]);
+    Object.assign(state, READING);
+  } else if (rmSnapshot) {
+    Object.assign(state, rmSnapshot);
+    rmSnapshot = null;
+  }
+  syncControls();
+  markReading(e.target.checked);
+  render();
+});
+
+/* modal de export */
+const exportDialog = $("#exportDialog");
+$("#openExport").addEventListener("click", () => { renderExport(); exportDialog.showModal(); });
+$("#closeExport").addEventListener("click", () => exportDialog.close());
+/* click en el backdrop = cerrar: el click fuera del contenido tiene como target al <dialog> mismo */
+exportDialog.addEventListener("click", e => {
+  if (e.target === exportDialog) exportDialog.close();
+});
+
+/* detección de fuente instalada (medición canvas vs genéricas) */
+const fontCtx = document.createElement("canvas").getContext("2d");
+function fontAvailable(name) {
+  const sample = "mmmwwwiii1lO0@#";
+  return ["monospace", "sans-serif"].some(gen => {
+    fontCtx.font = `16px ${gen}`;
+    const base = fontCtx.measureText(sample).width;
+    fontCtx.font = `16px "${name}", ${gen}`;
+    return fontCtx.measureText(sample).width !== base;
+  });
+}
+
+/* ────────────────────────── preview ────────────────────────── */
+function buildPreview() {
+  const cur = `<span class="cursor ${state.cursorStyle}${state.cursorBlink ? " blink" : ""}">&nbsp;</span>`;
+  const sw = i => `<span class="sw" style="background:var(--a${i});color:var(--a${i < 8 ? i+8 : i-8})">${i}</span>`;
+  return [
+`<span class="c10 b">~/dev/cerebro</span> <span class="c12">main</span> <span class="c8">✦</span> <span class="c14 b">❯</span> ls -la`,
+`<span class="c12 b">drwxr-xr-x</span>  <span class="c12 b">01_projects/</span>   <span class="c12 b">03_resources/</span>   <span class="c7">CLAUDE.md</span>`,
+`<span class="c12 b">drwxr-xr-x</span>  <span class="c12 b">02_areas/</span>      <span class="c12 b">04_archive/</span>     <span class="c6">setup.sh</span><span class="c8">*</span>`,
+``,
+`<span class="c14 b">❯</span> git status`,
+`On branch <span class="c12 b">main</span>`,
+`  <span class="c2">modified:   01_projects/rise/_index.md</span>`,
+`  <span class="c1">deleted:    old-notes.md</span>`,
+`  <span class="c3">renamed:    draft.md → final.md</span>`,
+``,
+`<span class="c14 b">❯</span> npm test`,
+` <span class="c2 b">PASS</span>  src/parser.test.ts <span class="c8">(2.1s)</span>`,
+` <span class="c1 b">FAIL</span>  src/export.test.ts`,
+`   <span class="c9">✕ genera TOML válido</span> <span class="c8">— expected "#fff" got undefined</span>`,
+` <span class="c11 b">⚠ warning:</span> <span class="c3">3 tests skipped</span>`,
+``,
+`<span class="c14 b">❯</span> claude`,
+`<span class="c13 b">✻ Welcome to Claude Code</span> <span class="c8">v2.x — fable-5</span>`,
+`<span class="c5">⏺</span> Analizando <span class="sel">texto seleccionado de ejemplo</span> en el KB…`,
+``,
+`<div class="prose">Encontré 14 archivos de settlement en el inbox que todavía no fueron procesados. El patrón es consistente: un CSV semanal por cada liquidación, con fechas entre mayo y agosto. Antes de moverlos al archivo conviene decidir si los consolidamos en un solo documento por mes o si cada semana amerita su propio registro — el volumen sugiere lo primero, y el historial de decisiones del KB apunta en la misma dirección.
+
+Si te parece bien, proceso el lote completo con la regla mensual y te dejo el reporte en _system/logs/. Los originales quedan intactos en 04_archive/sources/ como siempre.</div>`,
+`<span class="c8">ligaduras & features ·</span> <span class="c14">=> -> != === >= |> ffi</span>  <span class="c8">·</span>  <span class="c3">0O 1lI g@ ~=</span>`,
+``,
+`<span class="c8">paleta ANSI · 0–15</span>`,
+[0,1,2,3,4,5,6,7].map(sw).join(" "),
+[8,9,10,11,12,13,14,15].map(sw).join(" "),
+``,
+`<span class="c14 b">❯</span> ${cur}`
+  ].join("\n");
+}
+
+function applyVars() {
+  const t = document.documentElement.style;
+  const alpha = Math.round(state.opacity * 255).toString(16).padStart(2, "0");
+  t.setProperty("--t-bg", state.background + (state.opacity < 1 ? alpha : ""));
+  t.setProperty("--t-bg-solid", state.background);
+  t.setProperty("--t-fg", ensureContrast(state.foreground, state.background, state.minimumContrast));
+  t.setProperty("--t-cursor", state.cursor);
+  t.setProperty("--t-selbg", state.selectionBackground);
+  t.setProperty("--t-selfg", state.selectionForeground);
+  t.setProperty("--t-font", `"${state.fontFamily}", ui-monospace, Menlo, Consolas`);
+  t.setProperty("--t-blur", state.blur + "px");
+  t.setProperty("--t-bshift", state.baselineShift + "px");
+  t.setProperty("--t-size", state.fontSize + "px");
+  t.setProperty("--t-lh", state.cellHeightExtra
+    ? `calc(${state.lineHeight}em + ${state.cellHeightExtra}px)`
+    : state.lineHeight);
+  t.setProperty("--t-ls", state.letterSpacing + "px");
+  t.setProperty("--t-pad", state.padding + "px");
+  t.setProperty("--t-cols", state.columns);
+  const feats = [];
+  if (!state.ligatures) feats.push('"liga" 0', '"calt" 0');
+  state.fontFeatures.split(",").map(f => f.trim()).filter(f => /^[a-z]{2,4}\d{0,2}$/.test(f))
+    .forEach(f => feats.push(`"${f}" 1`));
+  t.setProperty("--t-feat", feats.length ? feats.join(", ") : "normal");
+  state.ansi.forEach((c, i) =>
+    t.setProperty("--a" + i, ensureContrast(c, state.background, state.minimumContrast)));
+}
+
+function renderContrast() {
+  const r = contrastRatio(state.foreground, state.background);
+  const ok = r >= 4.5;
+  $("#contrast").innerHTML =
+    `contraste texto/fondo <b>${r.toFixed(2)}:1</b>` +
+    `<span class="badge ${ok ? "ok" : "warn"}">${r >= 7 ? "AAA" : ok ? "AA" : "bajo"}</span>`;
+}
+
+/* ────────────────────────── exporters ────────────────────────── */
+const VS_KEYS = ["Black","Red","Green","Yellow","Blue","Magenta","Cyan","White",
+  "BrightBlack","BrightRed","BrightGreen","BrightYellow","BrightBlue","BrightMagenta","BrightCyan","BrightWhite"];
+
+function slug() { return state.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "mi-tema"; }
+
+const EXPORTERS = {
+  "VS Code / Cursor": {
+    file: () => "settings.json",
+    note: "Pegalo (o mergealo) en tu settings.json — Cmd+Shift+P → “Preferences: Open User Settings (JSON)”. Funciona igual en Cursor y Windsurf.",
+    gen() {
+      const colors = {
+        "terminal.background": state.background,
+        "terminal.foreground": state.foreground,
+        "terminalCursor.foreground": state.cursor,
+        "terminal.selectionBackground": state.selectionBackground,
+        "terminal.selectionForeground": state.selectionForeground
+      };
+      VS_KEYS.forEach((k, i) => colors["terminal.ansi" + k] = state.ansi[i]);
+      return JSON.stringify({
+        "workbench.colorCustomizations": colors,
+        "terminal.integrated.fontFamily": state.fontFamily,
+        "terminal.integrated.fontSize": state.fontSize,
+        "terminal.integrated.lineHeight": state.lineHeight,
+        "terminal.integrated.letterSpacing": state.letterSpacing,
+        "terminal.integrated.fontLigatures": state.ligatures,
+        "terminal.integrated.minimumContrastRatio": state.minimumContrast,
+        "terminal.integrated.drawBoldTextInBrightColors": state.boldAsBright,
+        "terminal.integrated.cursorStyle": state.cursorStyle === "bar" ? "line" : state.cursorStyle,
+        "terminal.integrated.cursorBlinking": state.cursorBlink
+      }, null, 2);
+    }
+  },
+  "JetBrains": {
+    file: () => slug() + ".icls",
+    note: "Settings → Editor → Color Scheme → ⚙ → Import Scheme. Controla los colores de consola; la fuente se configura aparte en Editor → Font.",
+    gen() {
+      const names = ["BLACK","RED","GREEN","YELLOW","BLUE","MAGENTA","CYAN","GRAY",
+        "DARKGRAY","RED_BRIGHT","GREEN_BRIGHT","YELLOW_BRIGHT","BLUE_BRIGHT","MAGENTA_BRIGHT","CYAN_BRIGHT","WHITE"];
+      const attrs = names.map((n, i) =>
+        `    <option name="CONSOLE_${n}_OUTPUT">\n      <value>\n        <option name="FOREGROUND" value="${stripHash(state.ansi[i])}" />\n      </value>\n    </option>`
+      ).join("\n");
+      return `<scheme name="${state.name}" version="142" parent_scheme="Darcula">
+  <colors>
+    <option name="CONSOLE_BACKGROUND_KEY" value="${stripHash(state.background)}" />
+  </colors>
+  <attributes>
+    <option name="CONSOLE_NORMAL_OUTPUT">
+      <value>
+        <option name="FOREGROUND" value="${stripHash(state.foreground)}" />
+      </value>
+    </option>
+${attrs}
+  </attributes>
+</scheme>`;
+    }
+  },
+  "Windows Terminal": {
+    file: () => slug() + "-scheme.json",
+    note: "Agregá el objeto al array \"schemes\" de tu settings.json de Windows Terminal, y en tu perfil poné \"colorScheme\": \"" + "TU_NOMBRE" + "\" + los campos de fuente.",
+    gen() {
+      const scheme = {
+        name: state.name,
+        background: state.background, foreground: state.foreground,
+        cursorColor: state.cursor, selectionBackground: state.selectionBackground,
+        black: state.ansi[0], red: state.ansi[1], green: state.ansi[2], yellow: state.ansi[3],
+        blue: state.ansi[4], purple: state.ansi[5], cyan: state.ansi[6], white: state.ansi[7],
+        brightBlack: state.ansi[8], brightRed: state.ansi[9], brightGreen: state.ansi[10],
+        brightYellow: state.ansi[11], brightBlue: state.ansi[12], brightPurple: state.ansi[13],
+        brightCyan: state.ansi[14], brightWhite: state.ansi[15]
+      };
+      const profile = {
+        colorScheme: state.name,
+        font: { face: state.fontFamily, size: state.fontSize },
+        padding: String(state.padding),
+        opacity: Math.round(state.opacity * 100),
+        useAcrylic: state.blur > 0,
+        intenseTextStyle: state.boldAsBright ? "all" : "bold",
+        cursorShape: state.cursorStyle === "block" ? "filledBox" : state.cursorStyle
+      };
+      const globals = { initialCols: state.columns };
+      return "// dentro de \"schemes\": [ … ]\n" + JSON.stringify(scheme, null, 2) +
+        "\n\n// en tu perfil:\n" + JSON.stringify(profile, null, 2) +
+        "\n\n// a nivel raíz del settings.json:\n" + JSON.stringify(globals, null, 2);
+    }
+  },
+  "Alacritty": {
+    file: () => slug() + ".toml",
+    note: "Guardalo e importalo desde ~/.config/alacritty/alacritty.toml con: import = [\"~/.config/alacritty/" + "tema" + ".toml\"] — o pegá el contenido directo.",
+    gen() {
+      const n = i => `"${state.ansi[i]}"`;
+      return `[font]
+size = ${state.fontSize}
+
+[font.normal]
+family = "${state.fontFamily}"
+
+[font.offset]
+x = ${state.letterSpacing}
+y = ${state.cellHeightExtra}
+
+[window]
+opacity = ${state.opacity}
+
+[window.dimensions]
+columns = ${state.columns}
+lines = 32
+
+[window.padding]
+x = ${state.padding}
+y = ${state.padding}
+
+[cursor.style]
+shape = "${state.cursorStyle === "bar" ? "Beam" : state.cursorStyle === "underline" ? "Underline" : "Block"}"
+blinking = "${state.cursorBlink ? "On" : "Off"}"
+
+[colors.primary]
+background = "${state.background}"
+foreground = "${state.foreground}"
+
+[colors.cursor]
+cursor = "${state.cursor}"
+text = "${state.background}"
+
+[colors.selection]
+background = "${state.selectionBackground}"
+text = "${state.selectionForeground}"
+
+[colors.normal]
+black   = ${n(0)}
+red     = ${n(1)}
+green   = ${n(2)}
+yellow  = ${n(3)}
+blue    = ${n(4)}
+magenta = ${n(5)}
+cyan    = ${n(6)}
+white   = ${n(7)}
+
+[colors.bright]
+black   = ${n(8)}
+red     = ${n(9)}
+green   = ${n(10)}
+yellow  = ${n(11)}
+blue    = ${n(12)}
+magenta = ${n(13)}
+cyan    = ${n(14)}
+white   = ${n(15)}`;
+    }
+  },
+  "kitty": {
+    file: () => slug() + ".conf",
+    note: "Guardalo en ~/.config/kitty/ y agregá `include tema.conf` a kitty.conf, o pegá el contenido directo.",
+    gen() {
+      const lines = state.ansi.map((c, i) => `color${i} ${c}`).join("\n");
+      return `font_family      ${state.fontFamily}
+font_size        ${state.fontSize}
+${state.letterSpacing !== 0 ? `modify_font cell_width ${state.letterSpacing > 0 ? "+" : ""}${state.letterSpacing}px\n` : ""}${state.cellHeightExtra !== 0 ? `modify_font cell_height ${state.cellHeightExtra > 0 ? "+" : ""}${state.cellHeightExtra}px\n` : ""}${state.baselineShift !== 0 ? `modify_font baseline ${state.baselineShift}\n` : ""}window_padding_width ${state.padding}
+initial_window_width ${state.columns}c
+initial_window_height 32c
+background_opacity ${state.opacity}
+${state.blur > 0 ? `background_blur ${state.blur}\n` : ""}disable_ligatures ${state.ligatures ? "never" : "always"}
+${state.fontFeatures.trim() ? `# font_features requiere el nombre PostScript de la fuente:\n# font_features TuFuente-Regular ${state.fontFeatures.split(",").map(f => "+" + f.trim()).join(" ")}\n` : ""}cursor_shape     ${state.cursorStyle === "bar" ? "beam" : state.cursorStyle}
+cursor_blink_interval ${state.cursorBlink ? "-1" : "0"}
+
+background       ${state.background}
+foreground       ${state.foreground}
+cursor           ${state.cursor}
+selection_background ${state.selectionBackground}
+selection_foreground ${state.selectionForeground}
+
+${lines}`;
+    }
+  },
+  "Ghostty": {
+    file: () => "config",
+    note: "Pegalo en ~/.config/ghostty/config (o ~/Library/Application Support/com.mitchellh.ghostty/config en macOS).",
+    gen() {
+      const pal = state.ansi.map((c, i) => `palette = ${i}=${c}`).join("\n");
+      return `font-family = ${state.fontFamily}
+font-size = ${state.fontSize}
+${state.letterSpacing !== 0 ? `adjust-cell-width = ${state.letterSpacing}\n` : ""}${state.cellHeightExtra !== 0 ? `adjust-cell-height = ${state.cellHeightExtra}\n` : ""}${state.baselineShift !== 0 ? `adjust-font-baseline = ${state.baselineShift}\n` : ""}window-padding-x = ${state.padding}
+window-padding-y = ${state.padding}
+window-width = ${state.columns}
+window-height = 32
+background-opacity = ${state.opacity}
+${state.blur > 0 ? `background-blur-radius = ${state.blur}\n` : ""}minimum-contrast = ${state.minimumContrast}
+font-thicken = ${state.fontThicken}
+${state.fontFeatures.trim() ? state.fontFeatures.split(",").map(f => `font-feature = ${f.trim()}`).join("\n") + "\n" : ""}${!state.ligatures ? "font-feature = -liga\nfont-feature = -calt\n" : ""}cursor-style = ${state.cursorStyle === "underline" ? "underline" : state.cursorStyle}
+cursor-style-blink = ${state.cursorBlink}
+
+background = ${state.background}
+foreground = ${state.foreground}
+cursor-color = ${state.cursor}
+selection-background = ${state.selectionBackground}
+selection-foreground = ${state.selectionForeground}
+
+${pal}`;
+    }
+  },
+  "WezTerm": {
+    file: () => "wezterm.lua",
+    note: "Fragmento para tu ~/.wezterm.lua — mergealo con tu config existente.",
+    gen() {
+      const q = arr => arr.map(c => `'${c}'`).join(", ");
+      return `local wezterm = require 'wezterm'
+local config = wezterm.config_builder()
+
+config.font = wezterm.font('${state.fontFamily}')
+config.font_size = ${state.fontSize}
+config.line_height = ${state.lineHeight}
+config.initial_cols = ${state.columns}
+config.initial_rows = 32
+config.window_padding = { left = ${state.padding}, right = ${state.padding}, top = ${state.padding}, bottom = ${state.padding} }
+config.window_background_opacity = ${state.opacity}
+${state.blur > 0 ? `config.macos_window_background_blur = ${state.blur}\n` : ""}config.bold_brightens_ansi_colors = ${state.boldAsBright}
+${!state.ligatures ? "config.harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' }" :
+  state.fontFeatures.trim() ? `config.harfbuzz_features = { ${state.fontFeatures.split(",").map(f => `'${f.trim()}=1'`).join(", ")} }` : ""}
+config.default_cursor_style = '${state.cursorBlink ? "Blinking" : "Steady"}${state.cursorStyle === "bar" ? "Bar" : state.cursorStyle === "underline" ? "Underline" : "Block"}'
+
+config.colors = {
+  background = '${state.background}',
+  foreground = '${state.foreground}',
+  cursor_bg = '${state.cursor}',
+  cursor_fg = '${state.background}',
+  selection_bg = '${state.selectionBackground}',
+  selection_fg = '${state.selectionForeground}',
+  ansi = { ${q(state.ansi.slice(0,8))} },
+  brights = { ${q(state.ansi.slice(8))} },
+}
+
+return config`;
+    }
+  },
+  "iTerm2": {
+    file: () => slug() + ".json",
+    note: "Perfil dinámico: guardá el archivo en ~/Library/Application Support/iTerm2/DynamicProfiles/ y el perfil aparece solo.",
+    gen() {
+      const comp = hex => {
+        const v = i => parseInt(hex.slice(i, i+2), 16) / 255;
+        return { "Red Component": +v(1).toFixed(6), "Green Component": +v(3).toFixed(6),
+                 "Blue Component": +v(5).toFixed(6), "Color Space": "sRGB", "Alpha Component": 1 };
+      };
+      const p = {
+        Name: state.name,
+        Guid: "phosphor-" + slug(),
+        "Normal Font": `${state.fontFamily} ${state.fontSize}`,
+        "Background Color": comp(state.background),
+        "Foreground Color": comp(state.foreground),
+        "Cursor Color": comp(state.cursor),
+        "Selection Color": comp(state.selectionBackground),
+        "Selected Text Color": comp(state.selectionForeground),
+        "Blinking Cursor": state.cursorBlink,
+        "Cursor Type": state.cursorStyle === "bar" ? 1 : state.cursorStyle === "underline" ? 0 : 2,
+        "Columns": state.columns,
+        "Rows": 32,
+        "Transparency": +(1 - state.opacity).toFixed(2),
+        "Blur": state.blur > 0,
+        "Blur Radius": state.blur,
+        "ASCII Ligatures": state.ligatures,
+        "Use Bold Color": state.boldAsBright
+      };
+      state.ansi.forEach((c, i) => p[`Ansi ${i} Color`] = comp(c));
+      return JSON.stringify({ Profiles: [p] }, null, 2);
+    }
+  },
+  "YAML (Orca)": {
+    file: () => slug() + ".yaml",
+    note: "Todos los tokens en YAML — el formato que soporta Orca. Los valores hex van entre comillas porque # inicia comentario en YAML.",
+    gen() {
+      const ansi = ANSI_KEYS.map((k, i) => `  ${k}: "${state.ansi[i]}"`).join("\n");
+      return `name: ${state.name}
+
+colors:
+  background: "${state.background}"
+  foreground: "${state.foreground}"
+  cursor: "${state.cursor}"
+  selection-background: "${state.selectionBackground}"
+  selection-foreground: "${state.selectionForeground}"
+
+ansi:
+${ansi}
+
+font:
+  family: ${state.fontFamily}
+  size: ${state.fontSize}
+  line-height: ${state.lineHeight}
+  letter-spacing: ${state.letterSpacing}
+  cell-height-extra: ${state.cellHeightExtra}
+  baseline-shift: ${state.baselineShift}
+  ligatures: ${state.ligatures}
+  features: ${state.fontFeatures.trim() ? "[" + state.fontFeatures.split(",").map(f => f.trim()).filter(Boolean).join(", ") + "]" : "[]"}
+  thicken: ${state.fontThicken}
+
+window:
+  columns: ${state.columns}
+  padding: ${state.padding}
+  opacity: ${state.opacity}
+  blur: ${state.blur}
+
+render:
+  minimum-contrast: ${state.minimumContrast}
+  bold-as-bright: ${state.boldAsBright}
+
+cursor-style: ${state.cursorStyle}
+cursor-blink: ${state.cursorBlink}`;
+    }
+  },
+  "JSON genérico": {
+    file: () => slug() + "-theme.json",
+    note: "Todos los tokens en un JSON plano — útil como fuente de verdad para convertir a cualquier otro formato.",
+    gen() {
+      const o = {
+        name: state.name,
+        colors: {
+          background: state.background, foreground: state.foreground, cursor: state.cursor,
+          selectionBackground: state.selectionBackground, selectionForeground: state.selectionForeground
+        },
+        ansi: Object.fromEntries(ANSI_KEYS.map((k, i) => [k, state.ansi[i]])),
+        font: { family: state.fontFamily, size: state.fontSize, lineHeight: state.lineHeight,
+                letterSpacing: state.letterSpacing, cellHeightExtra: state.cellHeightExtra,
+                baselineShift: state.baselineShift, ligatures: state.ligatures,
+                features: state.fontFeatures, thicken: state.fontThicken },
+        window: { columns: state.columns, padding: state.padding,
+                  opacity: state.opacity, blur: state.blur },
+        render: { minimumContrast: state.minimumContrast, boldAsBright: state.boldAsBright },
+        cursorStyle: state.cursorStyle, cursorBlink: state.cursorBlink
+      };
+      return JSON.stringify(o, null, 2);
+    }
+  }
+};
+
+let activeExport = "VS Code / Cursor";
+const tabsEl = $("#tabs");
+Object.keys(EXPORTERS).forEach(name => {
+  const b = document.createElement("button");
+  b.textContent = name;
+  b.setAttribute("role", "tab");
+  b.setAttribute("aria-selected", name === activeExport);
+  b.addEventListener("click", () => {
+    activeExport = name;
+    tabsEl.querySelectorAll("button").forEach(x =>
+      x.setAttribute("aria-selected", x.textContent === name));
+    renderExport();
+  });
+  tabsEl.appendChild(b);
+});
+
+function renderExport() {
+  const ex = EXPORTERS[activeExport];
+  $("#exportCode").textContent = ex.gen();
+  $("#exportNote").textContent = ex.note;
+}
+
+$("#copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(EXPORTERS[activeExport].gen());
+    $("#copyBtn").textContent = "copiado ✓";
+  } catch { $("#copyBtn").textContent = "error"; }
+  setTimeout(() => $("#copyBtn").textContent = "copiar", 1400);
+});
+$("#dlBtn").addEventListener("click", async () => {
+  const ex = EXPORTERS[activeExport];
+  const content = ex.gen();
+  const name = ex.file();
+  const flash = txt => {
+    $("#dlBtn").textContent = txt;
+    setTimeout(() => $("#dlBtn").textContent = "descargar", 2200);
+  };
+  /* 1) File System Access API: diálogo real de "guardar como" (Chrome/Edge) */
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: name });
+      const w = await handle.createWritable();
+      await w.write(content);
+      await w.close();
+      flash("guardado ✓");
+      return;
+    } catch (err) {
+      if (err.name === "AbortError") return; /* el usuario canceló */
+      /* bloqueado (sandbox/permiso) → seguir al fallback */
+    }
+  }
+  /* 2) fallback clásico: <a download> con blob, adjuntado al DOM */
+  try {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    flash("descargando…");
+  } catch (_) {
+    flash("bloqueado — usá copiar");
+  }
+});
+
+/* ────────────────────────── color picker ────────────────────────── */
+function hexToRgbArr(hex) { return [1,3,5].map(i => parseInt(hex.slice(i, i+2), 16)); }
+function rgbToHexStr(r, g, b) {
+  return "#" + [r,g,b].map(v =>
+    Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("");
+}
+function rgbToHsv(r, g, b) {
+  r/=255; g/=255; b/=255;
+  const M = Math.max(r,g,b), m = Math.min(r,g,b), d = M - m;
+  let h = 0;
+  if (d) {
+    h = M === r ? ((g-b)/d) % 6 : M === g ? (b-r)/d + 2 : (r-g)/d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, M ? d/M : 0, M];
+}
+function hsvToRgb(h, s, v) {
+  const f = n => { const k = (n + h/60) % 6; return v - v*s*Math.max(0, Math.min(k, 4-k, 1)); };
+  return [f(5)*255, f(3)*255, f(1)*255];
+}
+function rgbToHsl(r, g, b) {
+  r/=255; g/=255; b/=255;
+  const M = Math.max(r,g,b), m = Math.min(r,g,b), d = M - m, l = (M+m)/2;
+  let h = 0, s = 0;
+  if (d) {
+    s = l > 0.5 ? d/(2-M-m) : d/(M+m);
+    h = M === r ? ((g-b)/d) % 6 : M === g ? (b-r)/d + 2 : (r-g)/d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, s, l];
+}
+function hslToRgb(h, s, l) {
+  const a = s * Math.min(l, 1-l);
+  const f = n => { const k = (n + h/30) % 12; return l - a*Math.max(-1, Math.min(k-3, 9-k, 1)); };
+  return [f(0)*255, f(8)*255, f(4)*255];
+}
+function rgbToCmyk(r, g, b) {
+  const k = 1 - Math.max(r,g,b)/255;
+  if (k >= 1) return [0,0,0,100];
+  const f = v => Math.round((1 - v/255 - k) / (1-k) * 100);
+  return [f(r), f(g), f(b), Math.round(k*100)];
+}
+function cmykToRgb(c, m, y, k) {
+  c/=100; m/=100; y/=100; k/=100;
+  return [255*(1-c)*(1-k), 255*(1-m)*(1-k), 255*(1-y)*(1-k)];
+}
+function parseColorString(str) {
+  str = String(str).trim();
+  const hx = normHex(str.replace(/^#?/, "#"));
+  if (hx) return hexToRgbArr(hx);
+  let m = str.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (m) return [+m[1], +m[2], +m[3]];
+  m = str.match(/hsla?\(\s*([\d.]+)[,\s]+([\d.]+)%[,\s]+([\d.]+)%/i);
+  if (m) return hslToRgb(+m[1], +m[2]/100, +m[3]/100);
+  return null;
+}
+
+const cpEl = document.createElement("div");
+cpEl.id = "cpicker";
+cpEl.hidden = true;
+cpEl.innerHTML = `
+  <div class="cp-sv"><div class="cp-thumb"></div></div>
+  <div class="cp-hue"><div class="cp-hthumb"></div></div>
+  <div class="cp-row">
+    <select id="cpMode" aria-label="modo de color">
+      <option>HEX</option><option>RGB</option><option>HSL</option>
+      <option>HSB</option><option>CMYK</option>
+    </select>
+    <div id="cpFields"></div>
+    <button type="button" id="cpCopy" title="copiar código de color">⧉</button>
+  </div>
+  <div class="cp-swlabel">en este tema</div>
+  <div class="cp-swgrid" id="cpUsed"></div>
+  <div class="cp-swlabel">recientes</div>
+  <div class="cp-swgrid" id="cpRecent"></div>`;
+document.body.appendChild(cpEl);
+
+const cp = { h: 0, s: 0, v: 1, set: null };
+const cpSv = cpEl.querySelector(".cp-sv");
+const cpSvThumb = cpEl.querySelector(".cp-thumb");
+const cpHue = cpEl.querySelector(".cp-hue");
+const cpHueThumb = cpEl.querySelector(".cp-hthumb");
+const cpModeSel = cpEl.querySelector("#cpMode");
+const cpFields = cpEl.querySelector("#cpFields");
+const cpUsedEl = cpEl.querySelector("#cpUsed");
+const cpRecentEl = cpEl.querySelector("#cpRecent");
+let cpUpdaters = [];
+let cpAnchor = null;
+let cpRecents = [];
+try {
+  cpRecents = JSON.parse(localStorage.getItem("phosphor-recents") || "[]");
+  cpModeSel.value = localStorage.getItem("phosphor-cp-mode") || "HEX";
+} catch (_) {}
+
+const cpHex = () => rgbToHexStr(...hsvToRgb(cp.h, cp.s, cp.v));
+function cpSetRgb(rgb) {
+  const [h, s, v] = rgbToHsv(...rgb);
+  cp.h = h; cp.s = s; cp.v = v;
+}
+const CP_MODES = {
+  RGB: {
+    ch: [["R",255],["G",255],["B",255]],
+    get: () => hsvToRgb(cp.h, cp.s, cp.v).map(Math.round),
+    set: v => cpSetRgb(v),
+    str: v => `rgb(${v.join(", ")})`
+  },
+  HSL: {
+    ch: [["H",360],["S",100],["L",100]],
+    get: () => { const [h,s,l] = rgbToHsl(...hsvToRgb(cp.h, cp.s, cp.v)); return [h, s*100, l*100].map(Math.round); },
+    set: v => cpSetRgb(hslToRgb(v[0], v[1]/100, v[2]/100)),
+    str: v => `hsl(${v[0]}, ${v[1]}%, ${v[2]}%)`
+  },
+  HSB: {
+    ch: [["H",360],["S",100],["B",100]],
+    get: () => [Math.round(cp.h), Math.round(cp.s*100), Math.round(cp.v*100)],
+    set: v => { cp.h = v[0]; cp.s = v[1]/100; cp.v = v[2]/100; },
+    str: v => `hsb(${v[0]}, ${v[1]}%, ${v[2]}%)`
+  },
+  CMYK: {
+    ch: [["C",100],["M",100],["Y",100],["K",100]],
+    get: () => rgbToCmyk(...hsvToRgb(cp.h, cp.s, cp.v).map(Math.round)),
+    set: v => cpSetRgb(cmykToRgb(...v)),
+    str: v => `cmyk(${v.join("%, ")}%)`
+  }
+};
+
+function cpBuildFields() {
+  cpFields.innerHTML = "";
+  cpUpdaters = [];
+  const mode = cpModeSel.value;
+  if (mode === "HEX") {
+    const i = document.createElement("input");
+    i.type = "text"; i.className = "cp-hexin";
+    i.setAttribute("aria-label", "código de color");
+    i.value = cpHex();
+    i.addEventListener("change", () => {
+      const rgb = parseColorString(i.value);
+      if (rgb) { cpSetRgb(rgb); cpCommit(); } else i.value = cpHex();
+    });
+    cpFields.appendChild(i);
+    cpUpdaters.push(() => { if (document.activeElement !== i) i.value = cpHex(); });
+    return;
+  }
+  const spec = CP_MODES[mode];
+  const inputs = spec.ch.map(([name, max], idx) => {
+    const i = document.createElement("input");
+    i.type = "number"; i.min = 0; i.max = max;
+    i.setAttribute("aria-label", name);
+    i.title = name;
+    i.value = spec.get()[idx];
+    i.addEventListener("change", () => {
+      const vals = inputs.map(x => Math.max(0, +x.value || 0));
+      spec.set(vals);
+      cpCommit();
+    });
+    cpFields.appendChild(i);
+    return i;
+  });
+  cpUpdaters.push(() => {
+    const vals = spec.get();
+    inputs.forEach((i, idx) => { if (document.activeElement !== i) i.value = vals[idx]; });
+  });
+}
+
+function cpPaint() {
+  cpEl.style.setProperty("--cp-hue", `hsl(${cp.h}, 100%, 50%)`);
+  cpSvThumb.style.left = (cp.s * 100) + "%";
+  cpSvThumb.style.top = ((1 - cp.v) * 100) + "%";
+  cpHueThumb.style.left = (cp.h / 360 * 100) + "%";
+  cpUpdaters.forEach(u => u());
+}
+
+function cpCommit() {
+  if (cp.set) cp.set(cpHex());
+  cpPaint();
+  render();
+}
+
+function cpDragify(el, fn) {
+  el.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    const move = ev => {
+      const r = el.getBoundingClientRect();
+      fn(Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)),
+         Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)));
+    };
+    move(e);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", () => el.removeEventListener("pointermove", move), { once: true });
+  });
+}
+cpDragify(cpSv, (x, y) => { cp.s = x; cp.v = 1 - y; cpCommit(); });
+cpDragify(cpHue, x => { cp.h = x * 360; cpCommit(); });
+
+cpModeSel.addEventListener("change", () => {
+  try { localStorage.setItem("phosphor-cp-mode", cpModeSel.value); } catch (_) {}
+  cpBuildFields();
+  cpPaint();
+});
+
+cpEl.querySelector("#cpCopy").addEventListener("click", async () => {
+  const mode = cpModeSel.value;
+  const text = mode === "HEX" ? cpHex() : CP_MODES[mode].str(CP_MODES[mode].get());
+  try { await navigator.clipboard.writeText(text); } catch (_) {}
+});
+
+/* pegar un código de color en cualquier parte del picker lo aplica */
+cpEl.addEventListener("paste", e => {
+  const rgb = parseColorString(e.clipboardData.getData("text"));
+  if (rgb) { e.preventDefault(); cpSetRgb(rgb); cpBuildFields(); cpCommit(); }
+});
+
+function cpMkSwatch(hex) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "cp-sw";
+  b.style.background = hex;
+  b.title = hex;
+  b.addEventListener("click", () => { cpSetRgb(hexToRgbArr(hex)); cpCommit(); });
+  return b;
+}
+function cpBuildSwatches() {
+  const used = [...new Set([
+    state.background, state.foreground, state.cursor,
+    state.selectionBackground, state.selectionForeground, ...state.ansi
+  ])];
+  cpUsedEl.innerHTML = ""; used.forEach(c => cpUsedEl.appendChild(cpMkSwatch(c)));
+  cpRecentEl.innerHTML = ""; cpRecents.forEach(c => cpRecentEl.appendChild(cpMkSwatch(c)));
+}
+
+function openPicker(anchor, get, set) {
+  cp.set = set;
+  cpAnchor = anchor;
+  cpSetRgb(hexToRgbArr(get()));
+  cpBuildFields();
+  cpBuildSwatches();
+  cpPaint();
+  cpEl.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  cpEl.style.left = Math.max(8, Math.min(r.left, innerWidth - cpEl.offsetWidth - 8)) + "px";
+  let top = r.bottom + 6;
+  if (top + cpEl.offsetHeight > innerHeight - 8) top = Math.max(8, r.top - cpEl.offsetHeight - 6);
+  cpEl.style.top = top + "px";
+}
+function closePicker() {
+  if (cpEl.hidden) return;
+  const hex = cpHex();
+  cpRecents = [hex, ...cpRecents.filter(c => c !== hex)].slice(0, 16);
+  try { localStorage.setItem("phosphor-recents", JSON.stringify(cpRecents)); } catch (_) {}
+  cpEl.hidden = true;
+  cp.set = null;
+  cpAnchor = null;
+}
+document.addEventListener("pointerdown", e => {
+  if (!cpEl.hidden && !cpEl.contains(e.target) && e.target !== cpAnchor) closePicker();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePicker(); });
+
+/* ────────────────────────── import ────────────────────────── */
+function normColor(v) {
+  if (typeof v !== "string") return null;
+  v = v.trim().replace(/^["']|["']$/g, "").replace(/^0x/i, "#");
+  if (!v.startsWith("#") && /^[0-9a-f]{3}$|^[0-9a-f]{6}$/i.test(v)) v = "#" + v;
+  return normHex(v.slice(0, 7));
+}
+
+const WIN_MAP = { black:0, red:1, green:2, yellow:3, blue:4, purple:5, magenta:5, cyan:6, white:7,
+  brightBlack:8, brightRed:9, brightGreen:10, brightYellow:11, brightBlue:12,
+  brightPurple:13, brightMagenta:13, brightCyan:14, brightWhite:15 };
+const KITTY_NAMES = ["black","red","green","yellow","blue","magenta","cyan","white"];
+
+function plistColor(dict) {
+  const c = {};
+  const kids = [...dict.children];
+  for (let i = 0; i < kids.length - 1; i++)
+    if (kids[i].tagName === "key") c[kids[i].textContent.trim()] = parseFloat(kids[i+1].textContent);
+  if (c["Red Component"] == null) return null;
+  return "#" + ["Red","Green","Blue"].map(n =>
+    Math.round(Math.min(1, Math.max(0, c[n + " Component"] || 0)) * 255)
+      .toString(16).padStart(2, "0")).join("");
+}
+
+function parseItermDict(dict, out) {
+  const kids = [...dict.children];
+  for (let i = 0; i < kids.length - 1; i++) {
+    if (kids[i].tagName !== "key" || kids[i+1].tagName !== "dict") continue;
+    const key = kids[i].textContent.trim();
+    const hex = plistColor(kids[i+1]);
+    if (!hex) continue;
+    const m = key.match(/^Ansi (\d+) Color$/);
+    if (m) out.ansi[+m[1]] = hex;
+    else if (key === "Background Color") out.colors.background = hex;
+    else if (key === "Foreground Color") out.colors.foreground = hex;
+    else if (key === "Cursor Color") out.colors.cursor = hex;
+    else if (key === "Selection Color") out.colors.selectionBackground = hex;
+    else if (key === "Selected Text Color") out.colors.selectionForeground = hex;
+  }
+}
+
+function importTheme(text) {
+  text = text.trim();
+  if (!text) throw new Error("nada para importar — pegá el contenido de un tema");
+  const out = { name: null, colors: {}, ansi: Array(16).fill(null), font: {}, win: {} };
+  let format = null;
+  const compColor = o => o && o["Red Component"] != null
+    ? "#" + ["Red","Green","Blue"].map(n =>
+        Math.round(Math.min(1, Math.max(0, o[n + " Component"])) * 255)
+          .toString(16).padStart(2, "0")).join("")
+    : null;
+
+  if (/<plist|<\?xml/.test(text)) {
+    format = "iTerm2 (.itermcolors)";
+    const doc = new DOMParser().parseFromString(text, "application/xml");
+    const dict = doc.querySelector("plist > dict");
+    if (!dict) throw new Error("plist XML inválido");
+    parseItermDict(dict, out);
+  } else {
+    let obj = null;
+    try {
+      obj = JSON.parse(text.replace(/^\s*\/\/.*$/gm, "").replace(/,\s*([}\]])/g, "$1"));
+    } catch (_) {}
+
+    if (obj && typeof obj === "object") {
+      if (obj.Profiles && obj.Profiles[0]) {
+        format = "iTerm2 (perfil dinámico)";
+        const p = obj.Profiles[0];
+        out.name = p.Name || null;
+        for (let i = 0; i < 16; i++) out.ansi[i] = compColor(p[`Ansi ${i} Color`]);
+        out.colors.background = compColor(p["Background Color"]);
+        out.colors.foreground = compColor(p["Foreground Color"]);
+        out.colors.cursor = compColor(p["Cursor Color"]);
+        out.colors.selectionBackground = compColor(p["Selection Color"]);
+        out.colors.selectionForeground = compColor(p["Selected Text Color"]);
+      } else if (obj["workbench.colorCustomizations"] || Object.keys(obj).some(k => k.startsWith("terminal."))) {
+        format = "VS Code (settings.json)";
+        const cc = obj["workbench.colorCustomizations"] || obj;
+        VS_KEYS.forEach((k, i) => { const v = normColor(cc["terminal.ansi" + k]); if (v) out.ansi[i] = v; });
+        out.colors.background = normColor(cc["terminal.background"]);
+        out.colors.foreground = normColor(cc["terminal.foreground"]);
+        out.colors.cursor = normColor(cc["terminalCursor.foreground"]);
+        out.colors.selectionBackground = normColor(cc["terminal.selectionBackground"]);
+        out.colors.selectionForeground = normColor(cc["terminal.selectionForeground"]);
+        out.font.family = obj["terminal.integrated.fontFamily"];
+        out.font.size = obj["terminal.integrated.fontSize"];
+        out.font.lineHeight = obj["terminal.integrated.lineHeight"];
+        out.font.letterSpacing = obj["terminal.integrated.letterSpacing"];
+      } else if (obj.schemes && obj.schemes[0] || "brightBlack" in obj || ("background" in obj && ("purple" in obj || "magenta" in obj))) {
+        format = "Windows Terminal";
+        const s = obj.schemes ? obj.schemes[0] : obj;
+        out.name = s.name || null;
+        Object.entries(WIN_MAP).forEach(([k, i]) => { const v = normColor(s[k]); if (v) out.ansi[i] = v; });
+        out.colors.background = normColor(s.background);
+        out.colors.foreground = normColor(s.foreground);
+        out.colors.cursor = normColor(s.cursorColor);
+        out.colors.selectionBackground = normColor(s.selectionBackground);
+      } else if (obj.ansi && obj.colors) {
+        format = "JSON (Phosphor)";
+        out.name = obj.name || null;
+        ANSI_KEYS.forEach((k, i) => { const v = normColor(obj.ansi[k]); if (v) out.ansi[i] = v; });
+        Object.keys(obj.colors).forEach(k => { const v = normColor(obj.colors[k]); if (v) out.colors[k] = v; });
+        if (obj.font) Object.assign(out.font, obj.font);
+        if (obj.window) out.win = obj.window;
+      } else {
+        throw new Error("JSON válido pero no reconozco el esquema de claves");
+      }
+    } else if (/\[colors[.\]]/.test(text)) {
+      format = "Alacritty (TOML)";
+      let sec = "";
+      text.split("\n").forEach(raw => {
+        const line = raw.trim();
+        if (!line || line.startsWith("#")) return;
+        const s = line.match(/^\[(.+)\]$/);
+        if (s) { sec = s[1]; return; }
+        const kv = line.match(/^(\w+)\s*=\s*(.+)$/);
+        if (!kv) return;
+        const [, key, val] = kv;
+        const color = normColor(val);
+        const idx = KITTY_NAMES.indexOf(key);
+        if (sec === "colors.normal" && idx >= 0) out.ansi[idx] = color;
+        else if (sec === "colors.bright" && idx >= 0) out.ansi[idx + 8] = color;
+        else if (sec === "colors.primary" && (key === "background" || key === "foreground")) out.colors[key] = color;
+        else if (sec === "colors.cursor" && key === "cursor") out.colors.cursor = color;
+        else if (sec === "colors.selection" && key === "background") out.colors.selectionBackground = color;
+        else if (sec === "colors.selection" && key === "text") out.colors.selectionForeground = color;
+        else if (sec === "font.normal" && key === "family") out.font.family = val.replace(/^["']|["']$/g, "");
+        else if (sec === "font" && key === "size") out.font.size = parseFloat(val);
+      });
+    } else if (/base0[0-9A-F]\s*:/i.test(text)) {
+      format = "Base16 YAML";
+      const b = {};
+      for (const m of text.matchAll(/base0([0-9A-F])\s*:\s*["']?#?([0-9a-fA-F]{6})/gi))
+        b[m[1].toUpperCase()] = "#" + m[2].toLowerCase();
+      const nm = text.match(/^(?:scheme|name)\s*:\s*["']?(.+?)["']?\s*$/mi);
+      out.name = nm ? nm[1] : null;
+      out.colors.background = b["0"]; out.colors.foreground = b["5"];
+      out.colors.cursor = b["5"]; out.colors.selectionBackground = b["2"];
+      const map = ["0","8","B","A","D","E","C","5","3","8","B","A","D","E","C","7"];
+      map.forEach((d, i) => out.ansi[i] = b[d] || null);
+    } else if (/^\s*palette\s*=/m.test(text)) {
+      format = "Ghostty";
+      text.split("\n").forEach(raw => {
+        const line = raw.trim();
+        if (!line || line.startsWith("#")) return;
+        const pal = line.match(/^palette\s*=\s*(\d+)\s*=\s*(\S+)/);
+        if (pal) { out.ansi[+pal[1]] = normColor(pal[2]); return; }
+        const kv = line.match(/^([\w-]+)\s*=\s*(.+)$/);
+        if (!kv) return;
+        const [, key, val] = kv;
+        if (key === "background") out.colors.background = normColor(val);
+        else if (key === "foreground") out.colors.foreground = normColor(val);
+        else if (key === "cursor-color") out.colors.cursor = normColor(val);
+        else if (key === "selection-background") out.colors.selectionBackground = normColor(val);
+        else if (key === "selection-foreground") out.colors.selectionForeground = normColor(val);
+        else if (key === "font-family") out.font.family = val.trim();
+        else if (key === "font-size") out.font.size = parseFloat(val);
+      });
+    } else if (/ansi\s*=\s*{/.test(text)) {
+      format = "WezTerm (lua)";
+      const grab = re => { const m = text.match(re); return m ? [...m[1].matchAll(/["']([^"']+)["']/g)].map(x => normColor(x[1])) : []; };
+      grab(/ansi\s*=\s*{([^}]*)}/).forEach((c, i) => out.ansi[i] = c);
+      grab(/brights\s*=\s*{([^}]*)}/).forEach((c, i) => out.ansi[i + 8] = c);
+      const kv = (k) => { const m = text.match(new RegExp(k + `\\s*=\\s*["']([^"']+)["']`)); return m ? normColor(m[1]) : null; };
+      out.colors.background = kv("background"); out.colors.foreground = kv("foreground");
+      out.colors.cursor = kv("cursor_bg");
+      out.colors.selectionBackground = kv("selection_bg"); out.colors.selectionForeground = kv("selection_fg");
+    } else if (/color\d+\s*:/.test(text)) {
+      format = "Xresources";
+      for (const m of text.matchAll(/color(\d+)\s*:\s*(#[0-9a-fA-F]{3,6}|[0-9a-fA-F]{6})/g))
+        if (+m[1] < 16) out.ansi[+m[1]] = normColor(m[2]);
+      const x = k => { const m = text.match(new RegExp(k + "\\s*:\\s*(#?[0-9a-fA-F]{3,6})")); return m ? normColor(m[1]) : null; };
+      out.colors.background = x("background"); out.colors.foreground = x("foreground");
+      out.colors.cursor = x("cursorColor");
+    } else if (/^\s*ansi:\s*$/m.test(text) || /^\s*colors:\s*$/m.test(text)) {
+      format = "YAML (Phosphor)";
+      let top = null;
+      text.split("\n").forEach(l => {
+        if (!l.trim() || l.trim().startsWith("#")) return;
+        if (!/^\s/.test(l)) {
+          const t = l.match(/^([\w-]+):\s*(.*)$/);
+          if (t) { top = t[1]; if (t[1] === "name" && t[2]) out.name = t[2].trim(); }
+          return;
+        }
+        const m = l.match(/^\s+([\w-]+):\s*(.+)$/);
+        if (!m) return;
+        const [, k, vr] = m;
+        const v = vr.trim();
+        if (top === "ansi") { const i = ANSI_KEYS.indexOf(k); if (i >= 0) out.ansi[i] = normColor(v); }
+        else if (top === "colors") {
+          const ck = { background:"background", foreground:"foreground", cursor:"cursor",
+            "selection-background":"selectionBackground", "selection-foreground":"selectionForeground" }[k];
+          if (ck) out.colors[ck] = normColor(v);
+        } else if (top === "font") {
+          if (k === "family") out.font.family = v;
+          else if (k === "size") out.font.size = parseFloat(v);
+          else if (k === "line-height") out.font.lineHeight = parseFloat(v);
+          else if (k === "letter-spacing") out.font.letterSpacing = parseFloat(v);
+        } else if (top === "window") {
+          if (["columns","padding","opacity","blur"].includes(k)) out.win[k] = parseFloat(v);
+        }
+      });
+    } else if (/^\s*(color\d+|background|foreground|cursor|font_family)\s+\S/m.test(text)) {
+      format = "kitty";
+      text.split("\n").forEach(raw => {
+        const line = raw.trim();
+        if (!line || line.startsWith("#")) return;
+        const kv = line.match(/^(\S+)\s+(.+)$/);
+        if (!kv) return;
+        const [, key, val] = kv;
+        const cm = key.match(/^color(\d+)$/);
+        if (cm && +cm[1] < 16) out.ansi[+cm[1]] = normColor(val);
+        else if (key === "background") out.colors.background = normColor(val);
+        else if (key === "foreground") out.colors.foreground = normColor(val);
+        else if (key === "cursor") out.colors.cursor = normColor(val);
+        else if (key === "selection_background") out.colors.selectionBackground = normColor(val);
+        else if (key === "selection_foreground") out.colors.selectionForeground = normColor(val);
+        else if (key === "font_family") out.font.family = val.trim();
+        else if (key === "font_size") out.font.size = parseFloat(val);
+      });
+    } else {
+      throw new Error("formato no reconocido — probá con alguno de los listados arriba");
+    }
+  }
+
+  /* aplicar al estado */
+  const applied = [];
+  Object.entries(out.colors).forEach(([k, v]) => { if (v) { state[k] = v; applied.push(k); } });
+  const nAnsi = out.ansi.filter(Boolean).length;
+  out.ansi.forEach((c, i) => { if (c) state.ansi[i] = c; });
+  if (nAnsi) applied.unshift(`${nAnsi} colores ANSI`);
+  if (out.font.family) {
+    state.fontFamily = String(out.font.family).split(",")[0].replace(/^["']|["']$/g, "").trim();
+    const inList = [...fontSelect.options].some(o => o.value === state.fontFamily);
+    fontSelect.value = inList ? state.fontFamily : "__custom";
+    fontFamilyInput.value = state.fontFamily;
+    fontFamilyInput.disabled = inList;
+    applied.push("fuente");
+  }
+  if (out.font.size > 0) { state.fontSize = out.font.size; applied.push("tamaño"); }
+  if (out.font.lineHeight > 0) state.lineHeight = out.font.lineHeight;
+  if (Number.isFinite(out.font.letterSpacing)) state.letterSpacing = out.font.letterSpacing;
+  if (out.win.columns > 0) state.columns = out.win.columns;
+  if (out.win.padding >= 0) state.padding = out.win.padding;
+  if (out.win.opacity > 0) state.opacity = out.win.opacity;
+  if (out.win.blur >= 0) state.blur = out.win.blur;
+  if (out.name) { state.name = out.name; $("#themeName").value = out.name; }
+  if (!applied.length) throw new Error(`detecté ${format} pero no encontré valores importables`);
+
+  presetSel.value = "";
+  rows.forEach(r => r._sync());
+  syncControls();
+  render();
+  return { format, applied };
+}
+
+const importDialog = $("#importDialog");
+$("#openImport").addEventListener("click", () => importDialog.showModal());
+$("#closeImport").addEventListener("click", () => importDialog.close());
+importDialog.addEventListener("click", e => { if (e.target === importDialog) importDialog.close(); });
+$("#importFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) f.text().then(t => { $("#importText").value = t; });
+});
+$("#importBtn").addEventListener("click", () => {
+  const res = $("#importResult");
+  try {
+    const r = importTheme($("#importText").value);
+    res.textContent = `✓ ${r.format} — importado: ${r.applied.join(", ")}`;
+    res.className = "font-status ok";
+  } catch (err) {
+    res.textContent = "⚠ " + err.message;
+    res.className = "font-status warn";
+  }
+});
+
+/* ────────────────────────── render ────────────────────────── */
+function render() {
+  applyVars();
+  const pv = $("#preview");
+  pv.innerHTML = buildPreview();
+  pv.classList.toggle("thick", state.fontThicken);
+  pv.classList.toggle("bab", state.boldAsBright);
+  $("#chromeTitle").textContent =
+    `${slug()} — zsh · ${state.fontFamily} ${state.fontSize}px · ${state.columns} col`;
+  const avail = fontAvailable(state.fontFamily);
+  const fst = $("#fontStatus");
+  fst.textContent = avail
+    ? "✓ instalada — visible en el preview"
+    : "⚠ no detectada en tu sistema — el preview usa fallback (el export sale igual)";
+  fst.className = "font-status " + (avail ? "ok" : "warn");
+  renderContrast();
+  if (exportDialog.open) renderExport();
+}
+render();
+</script>
