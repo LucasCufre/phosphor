@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Phosphor</title>
 <style>
   :root {
@@ -85,7 +86,144 @@
     max-width: 1400px;
     margin: 0 auto;
   }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  /* ── mobile: preview a pantalla + drawer inferior de edición ── */
+  .drawer-cta, .drawer-head { display: none; }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; gap: 0; padding: 0.75rem 0.9rem 4.5rem; }
+    .stage-sticky { position: static; }
+    .term-body { min-height: 0; max-block-size: 62dvh; overflow: auto; }
+    /* CTA fijo abajo cuando el drawer está cerrado */
+    .drawer-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 49;
+      padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
+      background: var(--panel);
+      border-block-start: 1px solid var(--border);
+    }
+    .drawer-cta .lbl { color: var(--muted); font-size: 0.72rem; }
+    .drawer-cta button { white-space: nowrap; flex-shrink: 0; }
+    body.drawer-open .drawer-cta { visibility: hidden; }
+    /* los paneles viven en un drawer que sube desde abajo */
+    .controls {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 50;
+      max-block-size: 60dvh;
+      overflow-y: auto;
+      background: var(--panel);
+      border-block-start: 1px solid var(--border);
+      border-start-start-radius: 12px;
+      border-start-end-radius: 12px;
+      padding: 0 0.9rem calc(1rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -16px 48px rgba(0,0,0,.45);
+      transform: translateY(105%);
+      transition: transform 0.2s ease;
+    }
+    body.drawer-open .controls { transform: none; }
+    .drawer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--panel);
+      padding-block: 0.7rem 0.5rem;
+    }
+    .drawer-head .title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+    .drawer-head button {
+      background: var(--panel-2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      inline-size: 28px;
+      block-size: 28px;
+      font-family: var(--mono);
+      cursor: pointer;
+    }
+    /* accordions: cada panel colapsa a su título */
+    .controls .panel-title {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .controls .panel-title::after { content: "▾"; color: var(--muted); }
+    .controls .panel.collapsed .panel-title {
+      margin: 0;
+      padding-block-end: 0;
+      border-block-end: none;
+    }
+    .controls .panel.collapsed .panel-title::after { content: "▸"; }
+    .controls .panel.collapsed > :not(.panel-title) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .controls { transition: none; } }
+  .hdr-toggle { display: none; margin-left: auto; }
+  .hdr-scrim { display: none; }
+  @media (max-width: 600px) {
+    /* header colapsado: una fila; el menú abre como modal con overlay */
+    header {
+      padding: 0.7rem 0.9rem;
+      align-items: center;
+      position: relative;
+      z-index: 56;
+    }
+    header .sub { display: none; }
+    .hdr-toggle { display: inline-block; }
+    .hdr-scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: rgba(5, 8, 12, 0.6);
+    }
+    .header-controls { display: none; }
+    header.open .header-controls {
+      display: flex;
+      position: absolute;
+      inset-block-start: 100%;
+      inset-inline: 0;
+      margin: 0;
+      padding: 0.9rem;
+      background: var(--panel);
+      border-block-end: 1px solid var(--border);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+    .header-controls label.inline { flex: 1 1 100%; }
+    .header-controls label.inline select,
+    .header-controls label.inline input {
+      flex: 1;
+      min-inline-size: 0;
+    }
+    #openImport, #openExport { flex: 1 1 40%; }
+    main { padding-inline: 0.6rem; }
+    dialog#exportDialog, dialog#importDialog {
+      inline-size: 100vw;
+      max-inline-size: 100vw;
+      max-block-size: 100dvh;
+      margin: 0;
+      border-radius: 0;
+      border-inline: none;
+    }
+  }
+  @media (pointer: coarse) {
+    .color-row .swatchBtn { inline-size: 44px; block-size: 32px; }
+    .cp-sw { inline-size: 24px; block-size: 24px; }
+    .cp-hue { block-size: 20px; }
+  }
 
   /* ── Controls panel ── */
   .controls { display: flex; flex-direction: column; gap: 1rem; }
@@ -343,6 +481,15 @@
   /* ── Right column ── */
   .stage { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
 
+  /* agrupa terminal + contraste para que queden sticky juntos */
+  .stage-sticky {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
   .terminal {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -350,8 +497,6 @@
     box-shadow: 0 12px 40px rgba(0,0,0,.35);
     inline-size: fit-content;
     max-inline-size: 100%;
-    position: sticky;
-    top: 1rem;
     /* fondo degradado: hace visible la opacidad/blur del tema */
     background: linear-gradient(135deg, #3d2f55, #163049 45%, #4a2b3a);
   }
@@ -548,7 +693,8 @@
 <header>
   <h1>Phosphor</h1>
   <span class="sub">editor de temas de terminal · exportá a tu IDE</span>
-  <div class="header-controls">
+  <button type="button" id="hdrToggle" class="mini hdr-toggle" aria-expanded="false" aria-controls="hdrControls">menu ▾</button>
+  <div class="header-controls" id="hdrControls">
     <label class="inline">preset
       <select id="preset">
         <option value="">— elegir base —</option>
@@ -565,10 +711,9 @@
 <main>
   <div class="controls">
     <section class="panel" id="fs-base"><h2 class="panel-title">Base</h2></section>
-    <div class="contrast" id="contrast"></div>
     <section class="panel" id="fs-ansi"><h2 class="panel-title">ANSI 0–7 · normales</h2></section>
     <section class="panel" id="fs-bright"><h2 class="panel-title">ANSI 8–15 · bright</h2></section>
-    <section class="panel">
+    <section class="panel" id="fs-char">
       <h2 class="panel-title">Carácter</h2>
       <div class="font-grid">
         <label class="full" data-hint="Se aplica al preview solo si la fuente está instalada en tu sistema (el navegador no puede descargarla). El export usa el nombre elegido igual.">fuente
@@ -611,7 +756,7 @@
         </label>
       </div>
     </section>
-    <section class="panel">
+    <section class="panel" id="fs-para">
       <h2 class="panel-title">Párrafo · composición</h2>
       <div class="font-grid">
         <label data-hint="Leading proporcional: 1.7 = cada línea mide 170% del tamaño de fuente.">interlineado (ratio)
@@ -635,7 +780,7 @@
         </label>
       </div>
     </section>
-    <section class="panel">
+    <section class="panel" id="fs-render">
       <h2 class="panel-title">Render & ventana</h2>
       <div class="font-grid">
         <label data-hint="Transparencia del fondo de la ventana: 1 = opaco. El preview muestra un degradado detrás para que se note.">opacidad fondo
@@ -665,12 +810,15 @@
   </div>
 
   <div class="stage">
-    <div class="terminal">
-      <div class="term-chrome">
-        <span class="dots"><i></i><i></i><i></i></span>
-        <span id="chromeTitle">mi-tema — zsh</span>
+    <div class="stage-sticky">
+      <div class="terminal">
+        <div class="term-chrome">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span id="chromeTitle">mi-tema — zsh</span>
+        </div>
+        <div class="term-body" id="preview"></div>
       </div>
-      <div class="term-body" id="preview"></div>
+      <div class="contrast" id="contrast"></div>
     </div>
 
     <dialog id="exportDialog">
@@ -1311,44 +1459,21 @@ return config`;
   },
   "YAML (Orca)": {
     file: () => slug() + ".yaml",
-    note: "Todos los tokens en YAML — el formato que soporta Orca. Los valores hex van entre comillas porque # inicia comentario en YAML.",
+    note: "Formato Warp, que es lo que Orca valida al importar: background/foreground al raíz + terminal_colors normal/bright. Solo lleva colores (Warp no incluye tipografía ni ventana). Los hex van entre comillas porque # inicia comentario en YAML.",
     gen() {
-      const ansi = ANSI_KEYS.map((k, i) => `  ${k}: "${state.ansi[i]}"`).join("\n");
+      const names = ["black","red","green","yellow","blue","magenta","cyan","white"];
+      const block = off => names.map((k, i) => `    ${k}: "${state.ansi[i + off]}"`).join("\n");
+      const dark = contrastRatio(state.background, "#ffffff") > contrastRatio(state.background, "#000000");
       return `name: ${state.name}
-
-colors:
-  background: "${state.background}"
-  foreground: "${state.foreground}"
-  cursor: "${state.cursor}"
-  selection-background: "${state.selectionBackground}"
-  selection-foreground: "${state.selectionForeground}"
-
-ansi:
-${ansi}
-
-font:
-  family: ${state.fontFamily}
-  size: ${state.fontSize}
-  line-height: ${state.lineHeight}
-  letter-spacing: ${state.letterSpacing}
-  cell-height-extra: ${state.cellHeightExtra}
-  baseline-shift: ${state.baselineShift}
-  ligatures: ${state.ligatures}
-  features: ${state.fontFeatures.trim() ? "[" + state.fontFeatures.split(",").map(f => f.trim()).filter(Boolean).join(", ") + "]" : "[]"}
-  thicken: ${state.fontThicken}
-
-window:
-  columns: ${state.columns}
-  padding: ${state.padding}
-  opacity: ${state.opacity}
-  blur: ${state.blur}
-
-render:
-  minimum-contrast: ${state.minimumContrast}
-  bold-as-bright: ${state.boldAsBright}
-
-cursor-style: ${state.cursorStyle}
-cursor-blink: ${state.cursorBlink}`;
+accent: "${state.cursor}"
+background: "${state.background}"
+foreground: "${state.foreground}"
+details: ${dark ? "darker" : "lighter"}
+terminal_colors:
+  normal:
+${block(0)}
+  bright:
+${block(8)}`;
     }
   },
   "JSON genérico": {
@@ -1876,6 +2001,28 @@ function importTheme(text) {
       const x = k => { const m = text.match(new RegExp(k + "\\s*:\\s*(#?[0-9a-fA-F]{3,6})")); return m ? normColor(m[1]) : null; };
       out.colors.background = x("background"); out.colors.foreground = x("foreground");
       out.colors.cursor = x("cursorColor");
+    } else if (/^\s*terminal_colors:\s*$/m.test(text)) {
+      format = "Warp / Orca YAML";
+      const names = ["black","red","green","yellow","blue","magenta","cyan","white"];
+      let top = null, sub = null;
+      text.split("\n").forEach(l => {
+        if (!l.trim() || l.trim().startsWith("#")) return;
+        const m = l.match(/^(\s*)([\w-]+):\s*(.*)$/);
+        if (!m) return;
+        const [, indent, k, vr] = m;
+        const v = vr.trim();
+        if (!indent) {
+          top = k; sub = null;
+          if (k === "name" && v) out.name = v;
+          else if (k === "background" && v) out.colors.background = normColor(v);
+          else if (k === "foreground" && v) out.colors.foreground = normColor(v);
+          else if (k === "cursor" && v) out.colors.cursor = normColor(v);
+        } else if (top === "terminal_colors") {
+          if (!v) { sub = k; return; }
+          const i = names.indexOf(k);
+          if (i >= 0 && sub) out.ansi[sub === "bright" ? i + 8 : i] = normColor(v);
+        }
+      });
     } else if (/^\s*ansi:\s*$/m.test(text) || /^\s*colors:\s*$/m.test(text)) {
       format = "YAML (Phosphor)";
       let top = null;
@@ -1997,4 +2144,56 @@ function render() {
   if (exportDialog.open) renderExport();
 }
 render();
+
+/* ─────────────── drawer de edición mobile (≤900px) ───────────────
+   Los paneles de .controls viven en un drawer inferior. Cerrado,
+   un CTA fijo abajo comunica que desde ahí se edita el tema.
+   En desktop el CSS oculta CTA y cabecera, y .controls vuelve a
+   ser la columna izquierda de siempre. */
+const drawerCta = document.createElement("div");
+drawerCta.className = "drawer-cta";
+drawerCta.innerHTML =
+  '<span class="lbl">Personalizá tu terminal</span>' +
+  '<button type="button" class="mini" id="openDrawer">Editar Tema</button>';
+document.body.appendChild(drawerCta);
+
+const drawerHead = document.createElement("div");
+drawerHead.className = "drawer-head";
+drawerHead.innerHTML =
+  '<span class="title">editar tema</span>' +
+  '<button type="button" aria-label="cerrar editor">✕</button>';
+document.querySelector(".controls").prepend(drawerHead);
+
+document.querySelector("#openDrawer").addEventListener("click", () =>
+  document.body.classList.add("drawer-open"));
+drawerHead.querySelector("button").addEventListener("click", () =>
+  document.body.classList.remove("drawer-open"));
+
+/* accordions: cada panel colapsa a su título con un tap; arrancan
+   colapsados (solo tiene efecto ≤900px: las reglas .collapsed
+   viven dentro del media query) */
+document.querySelectorAll(".controls .panel").forEach(p => {
+  p.classList.add("collapsed");
+  p.querySelector(".panel-title").addEventListener("click", () =>
+    p.classList.toggle("collapsed"));
+});
+
+/* header colapsable en mobile: el menú abre como modal sobre un scrim */
+const hdrToggle = document.querySelector("#hdrToggle");
+const hdrScrim = document.createElement("div");
+hdrScrim.className = "hdr-scrim";
+hdrScrim.hidden = true;
+document.body.appendChild(hdrScrim);
+function setMenu(open) {
+  document.querySelector("header").classList.toggle("open", open);
+  hdrToggle.setAttribute("aria-expanded", String(open));
+  hdrToggle.textContent = open ? "menu ▴" : "menu ▾";
+  hdrScrim.hidden = !open;
+}
+hdrToggle.addEventListener("click", () =>
+  setMenu(!document.querySelector("header").classList.contains("open")));
+hdrScrim.addEventListener("click", () => setMenu(false));
+/* elegir importar/exportar cierra el menú antes de abrir su modal */
+["#openImport", "#openExport"].forEach(s =>
+  document.querySelector(s).addEventListener("click", () => setMenu(false)));
 </script>

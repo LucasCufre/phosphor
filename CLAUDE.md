@@ -15,7 +15,7 @@ Editor visual de temas de terminal en un único `index.html` autocontenido. El o
 - **helpers**: `normHex`, `contrastRatio` (WCAG), `mixHex`, `ensureContrast` (simulación de contraste mínimo: empuja el color hacia blanco/negro hasta cruzar el ratio).
 - **controls**: `colorRow()` genera cada fila (swatch + hex input) con `_sync()`; `CONTROL_IDS` + `syncControls()` para los inputs tipográficos; presets (7 temas conocidos); modo lectura (switch con snapshot/restore y marcado `.altered`).
 - **color picker** (estilo Figma): conversiones RGB/HSL/HSB/CMYK, popover `#cpicker` único reposicionable, drag con `setPointerCapture`, modos con input por canal, copiar/pegar, swatches "en uso" + "recientes".
-- **import**: `importTheme(text)` con auto-detección por estructura (no por extensión). Parsers: iTerm2 plist (DOMParser), JSON (distingue perfil iTerm / VS Code / Windows Terminal / Phosphor por claves), Alacritty TOML, Base16, Ghostty, kitty, Xresources, WezTerm lua, YAML propio. Import parcial por diseño: solo pisa lo que el tema trae.
+- **import**: `importTheme(text)` con auto-detección por estructura (no por extensión). Parsers: iTerm2 plist (DOMParser), JSON (distingue perfil iTerm / VS Code / Windows Terminal / Phosphor por claves), Alacritty TOML, Base16, Ghostty, kitty, Xresources, WezTerm lua, Warp/Orca YAML (`terminal_colors:`), YAML genérico legacy. Import parcial por diseño: solo pisa lo que el tema trae.
 - **exporters**: objeto `EXPORTERS` — cada entrada tiene `file()`, `note` (instrucciones de instalación) y `gen()`. 10 formatos. Cada uno emite solo lo que ese motor soporta.
 - **render**: `applyVars()` (variables CSS `--t-*` del preview + simulaciones), `buildPreview()` (sesión de terminal falsa + párrafo de prosa), `render()` orquesta todo.
 
@@ -37,7 +37,6 @@ Header: preset · nombre del tema · ⇲ importar · ⇱ exportar. Columna izqui
 
 ## Backlog / ideas no implementadas
 
-- Validar el esquema YAML contra lo que Orca espera realmente (se usó una estructura genérica; falta un ejemplo real de tema Orca para mapear clave por clave).
 - Estado compartible por URL (serializar el tema en el hash) — útil para la web pública.
 - Export de light themes / par light+dark.
 - Alpha por color (algunas terminales lo soportan en selección/cursor).
